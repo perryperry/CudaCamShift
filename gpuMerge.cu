@@ -1,8 +1,8 @@
 
 
-__global__ void gpuSummationReduce(float *in, float *out, int n)
+__global__ void gpuSummationReduce(int *in, int *out, int n)
 {
-    extern __shared__ float sdata[];
+    extern __shared__ int sdata[];
 
     // load shared mem
     unsigned int tid = threadIdx.x;

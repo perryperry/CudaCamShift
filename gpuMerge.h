@@ -7,6 +7,6 @@
 
 #define SHARED_SIZE_LIMIT 1024
 
-__global__ void gpuSummationReduce(float *in, float *out, int n);
+__global__ void gpuSummationReduce(int *in, int *out, int n);
 
 #endif

@@ -12,9 +12,9 @@ int gpuMain(int argc, const char ** argv);
 
 float * fillArray(int n, int upbound);
 
-void printArray(float *arr, int n);
+void printArray(int *arr, int n);
 
-long cpuReduce(float *h_in, int n);
+long cpuReduce(int *h_in, int n);
 
 void usage();
 
