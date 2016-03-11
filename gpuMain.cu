@@ -20,7 +20,7 @@ int * fillArray(int n, int upbound)
 
    /* generate n random numbers from 0 to unbound - 1 */
    for( i = 0 ; i < n ; i++ ) {
-      ret[i] = rand() % upbound * 1.0f;
+      ret[i] = i;//rand() % upbound * 1.0f;
    }
 
    return ret;
@@ -36,22 +36,18 @@ void printArray(int *arr, int n){
    printf("\n");
 }
 
-long cpuReduce(int *h_in, int n)
+int cpuReduce(int *h_in, int n)
 {
-    long total =0;
+    int total = 0;
 
 	int i;
     for(i = 0; i < n; i ++)
         total += h_in[i];
 
-	//printf("Total found by  cpu == %ld\n", total);
+	//printf("Total found by  cpu == %d\n", total);
 
-    return (int)total;
+    return total;
 }
-
-
-
-
 
 void usage()
 {
@@ -79,7 +75,7 @@ int gpuMain(int argc, const char **argv)
    }
 
    //
-   int tile_width = atoi(argv[1]);
+   float tile_width = atoi(argv[1]);
 
    if ( ! tile_width )
    {
@@ -112,7 +108,7 @@ int gpuMain(int argc, const char **argv)
        exit(-1);
    }
 
-   int num_block = ceil(n / (int)tile_width);
+   float num_block = ceil(n / (float)tile_width);
    dim3 block(tile_width, 1, 1);
    dim3 grid(num_block, 1, 1);
 
@@ -145,17 +141,16 @@ int gpuMain(int argc, const char **argv)
    
        // record a CUDA event immediately before and after the kernel launch
        cudaEventRecord(launch_begin,0);
-       //gpuSummationReduce<<<grid, block, tile_width * sizeof(int)>>>(d_in, d_out, n);
-       //cudaMemcpy(h_out, d_out, sizeof(int) * num_block, cudaMemcpyDeviceToHost);
+    
 
 
 
        while( 1 )
        {
            if(launch % 2 == 1) // odd launch
-               gpuSummationReduce<<<grid, block, tile_width * sizeof(int)>>>(d_in, d_out, num_in);
+               gpuSummationReduce<<<grid, block, tile_width * sizeof(float)>>>(d_in, d_out, num_in);
            else
-               gpuSummationReduce<<< grid, block, tile_width * sizeof(int) >>>(d_out, d_in, num_in);
+               gpuSummationReduce<<< grid, block, tile_width * sizeof(float) >>>(d_out, d_in, num_in);
 
            cudaDeviceSynchronize();
 
