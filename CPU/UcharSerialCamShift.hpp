@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <iostream>
-
+#include <fstream>
 #include "RegionOfInterest.hpp"
 
 #define BUCKET_WIDTH 3
@@ -21,9 +21,10 @@ class SerialCamShift
 {
 
 public:
-    
     void createHistogram(uchar * hsv, int step, RegionOfInterest * roi,  Mat * frame, double ** histogram);
     void meanshift(uchar * hueArray, int step, RegionOfInterest * roi, double * histogram);
+    void printHistogram(double * histogram, int length);
+    void backProjectHistogram(Mat hsv, Mat * frame, RegionOfInterest roi, double * histogram);
 
 };
 

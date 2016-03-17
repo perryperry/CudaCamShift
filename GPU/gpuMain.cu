@@ -239,6 +239,9 @@ int gpuMain(int argc, const char **argv)
   free(h_in);
   free(h_out);
 
+
+//exit(0);
+
   return 0;
 }
 

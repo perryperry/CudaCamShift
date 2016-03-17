@@ -19,7 +19,7 @@ Point topLeft, bottomRight;
 
 VideoWriter _outputVideo;
 
-#define OUTPUTFILENAME "/home/EASTERN/mperry16/School/Thesis/UcharCPU_SerialMeanShift/out.mov"
+#define OUTPUTFILENAME "out.mov"
 #define MAXTHREADS 3
 
 
@@ -60,14 +60,6 @@ void writeFrame(Mat frame)
 
 int cpuMain(int argc, const char * argv[])
 {
-    
-    if(argc != 3)
-    {
-        cout << argv << endl;
-        cout << "Usage: </path/to/videofile> </path/to/window/file>" << endl;
-        exit(-1);
-    }
-    
     VideoCapture cap(argv[1]);
     openOutputVideo(cap);
     

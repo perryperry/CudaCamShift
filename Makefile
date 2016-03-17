@@ -1,21 +1,27 @@
-gpu: gpuMerge.o gpuMain.o main.o RegionOfInterest.o UcharSerialCamShift.o cpuMain.o timing.o
-	nvcc -arch=sm_30 gpuMerge.o gpuMain.o timing.o RegionOfInterest.o UcharSerialCamShift.o cpuMain.o main.o -o gpu `pkg-config opencv --cflags --libs`
-gpuMain.o: gpuMain.cu
-	nvcc -arch=sm_30 -c gpuMain.cu -I/usr/local.cuda-7.0/samples/common -I../../common/inc
-gpuMerge.o:	gpuMerge.cu
-	nvcc -arch=sm_30 -c gpuMerge.cu -I/usr/local.cuda-7.0/samples/common -I../../common/inc
-timing.o: timing.c
-	gcc -c timing.c
-RegionOfInterest.o: CPU/RegionOfInterest.cpp
+gpu: BUILD/gpuMerge.o BUILD/gpuMain.o BUILD/main.o BUILD/RegionOfInterest.o BUILD/UcharSerialCamShift.o BUILD/timing.o
+	nvcc -arch=sm_30 BUILD/gpuMerge.o BUILD/gpuMain.o BUILD/timing.o BUILD/RegionOfInterest.o BUILD/UcharSerialCamShift.o  BUILD/main.o -o gpu `pkg-config opencv --cflags --libs`
+BUILD/gpuMain.o: GPU/gpuMain.cu
+	nvcc -arch=sm_30 -c GPU/gpuMain.cu -I/usr/local.cuda-7.0/samples/common -I../../common/inc
+	mv gpuMain.o BUILD
+BUILD/gpuMerge.o:	GPU/gpuMerge.cu
+	nvcc -arch=sm_30 -c GPU/gpuMerge.cu -I/usr/local.cuda-7.0/samples/common -I../../common/inc
+	mv gpuMerge.o BUILD
+BUILD/timing.o: GPU/timing.c
+	gcc -c GPU/timing.c
+	mv timing.o BUILD
+BUILD/RegionOfInterest.o: CPU/RegionOfInterest.cpp
 	g++ -c CPU/RegionOfInterest.cpp `pkg-config opencv --cflags --libs`
-UcharSerialCamShift.o: CPU/UcharSerialCamShift.cpp
+	mv RegionOfInterest.o BUILD
+BUILD/UcharSerialCamShift.o: CPU/UcharSerialCamShift.cpp
 	g++ -c CPU/UcharSerialCamShift.cpp `pkg-config opencv --cflags --libs`
-cpuMain.o:	CPU/cpuMain.cpp
-	g++ -c CPU/cpuMain.cpp `pkg-config opencv --cflags --libs`
-main.o:	main.cpp
-	g++ -c main.cpp `pkg-config opencv --cflags --libs`
+	mv UcharSerialCamShift.o BUILD
+#cpuMain.o:	CPU/cpuMain.cpp
+#	g++ -c CPU/cpuMain.cpp `pkg-config opencv --cflags --libs`
+BUILD/main.o:	main.cpp
+	g++ -c main.cpp -std=c++11 `pkg-config opencv --cflags --libs`
+	mv main.o BUILD
 clean:
-	rm *.o gpu
+	rm BUILD/*.o *.txt gpu out.mov
 run:
-	./gpu perry.mov input/windows.txt;
+	./gpu in.mov windows
 

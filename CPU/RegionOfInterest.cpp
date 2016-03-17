@@ -83,9 +83,36 @@ Point RegionOfInterest::getTopLeft()
     return _topLeft;
 }
 
+int RegionOfInterest::getTopLeftX()
+{
+    return _topLeft.x;
+}
+
+int RegionOfInterest::getTopLeftY()
+{
+    return _topLeft.y;
+}
+
 Point RegionOfInterest::getBottomRight()
 {
     return _bottomRight;
+}
+
+int RegionOfInterest::getBottomRightX()
+{
+    return _bottomRight.x;
+}
+
+int RegionOfInterest::getBottomRightY()
+{
+    return _bottomRight.y;
+}
+
+void RegionOfInterest::printROI()
+{
+    printf("******* PRINTING ROI ***********\n");
+    printf("TopLeft --> (%d, %d) BottomRight(%d, %d)\n", _topLeft.x, _topLeft.y, _bottomRight.x, _bottomRight.y);
+    printf("******* FINISHED PRINTING ROI ***********\n");
 }
 
 void RegionOfInterest::drawROI(Mat * frame)

@@ -25,6 +25,8 @@ using namespace std;
 
 class RegionOfInterest{
 public:
+    int _width;
+    int _height;
     RegionOfInterest(Point topR, Point botL, int fWidth, int fHeight);
     void drawROI(Mat * frame);
     void setCentroid(Point centroid);
@@ -34,14 +36,19 @@ public:
     int getTotalPixels();
     int getFrameWidth();
     int getFrameHeight();
+    void printROI();
     Point _centroid;
+    int getBottomRightX();
+    int getBottomRightY();
+    int getTopLeftX();
+    int getTopLeftY();
     
 private:
     
     Point _topLeft;
     Point _bottomRight;
-    int _width;
-    int _height;
+    
+    
     int _frameWidth;
     int _frameHeight;
     Point calcBottomRight(Point centroid, int w, int h);
