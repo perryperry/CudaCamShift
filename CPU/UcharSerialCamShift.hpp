@@ -21,11 +21,11 @@ class SerialCamShift
 {
 
 public:
-    void createHistogram(uchar * hsv, int step, RegionOfInterest * roi,  Mat * frame, double ** histogram);
-    void meanshift(uchar * hueArray, int step, RegionOfInterest * roi, double * histogram);
-    void printHistogram(double * histogram, int length);
-    void backProjectHistogram(Mat hsv, Mat * frame, RegionOfInterest roi, double * histogram);
+    void createHistogram(uchar * hsv, int step, RegionOfInterest * roi,  Mat * frame, float ** histogram);
 
+    void meanshift(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram);
+    void printHistogram(float * histogram, int length);
+    void backProjectHistogram(uchar * hsv, int step, Mat * frame, RegionOfInterest roi, float * histogram);
 };
 
 #endif /* SerialCamShift_hpp */

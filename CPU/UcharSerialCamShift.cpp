@@ -8,41 +8,22 @@
 
 #include "UcharSerialCamShift.hpp"
 
-void SerialCamShift::backProjectHistogram(Mat hsv, Mat * frame, RegionOfInterest roi, double * histogram)
+void SerialCamShift::backProjectHistogram(uchar * hsv, int step, Mat * frame, RegionOfInterest roi, float * histogram)
 {
-    int hue = 0;
-    int count = 0;
-    //printf("*********** BACKPROJECTING *************\n");
-    
-    ofstream myfile;
-    myfile.open ("histogram_backproject.txt");
-    
-  printf("HELLO: %d %d\n", roi.getTopLeftX(), roi.getTopLeftY());
-    int total = 0;
-    
-    for(int col = roi.getTopLeftX(); col < roi.getTopLeftX() + roi._width; col ++)
+    int hue = 0, count = 0;
+    for(int col = 0; col < roi._width; col ++)
     {
-        for(int row = roi.getTopLeftY(); row < roi.getTopLeftY() + roi._height; row++)
+        for(int row = 0; row < roi._height; row++)
         {
-            
-            hue = hsv.at<Vec3b>( row, col )[0];
-          // printf("%d) %d\n", count, hue);
-            myfile <<  hue << "\n";
-            total += hue;
-            (*frame).at<Vec3b>( row, col )[0]  = (int) ( 255 * histogram[hue /BUCKET_WIDTH]);
-            (*frame).at<Vec3b>( row, col )[1] = (int) (255 * histogram[hue / BUCKET_WIDTH]);
-            (*frame).at<Vec3b>( row, col )[2] = (int) (255 * histogram[hue / BUCKET_WIDTH]);
-            count ++;
+            hue = hsv[step * row + col];
+            (*frame).at<Vec3b>( row + roi.getTopLeftY(), col + roi.getTopLeftX() )[0] = (int) (255 * histogram[hue / BUCKET_WIDTH]);
+            (*frame).at<Vec3b>( row + roi.getTopLeftY(), col + roi.getTopLeftX() )[1] = (int) (255 * histogram[hue / BUCKET_WIDTH]);
+            (*frame).at<Vec3b>( row + roi.getTopLeftY(), col + roi.getTopLeftX() )[2] = (int) (255 * histogram[hue / BUCKET_WIDTH]);
         }
-        
     }
-   // printf("*********** DONE BACKPROJECTING *************\n");
-    cout << "histogram backproject hue Total: " << total << endl;
-
-     myfile.close();
 }
 
-void SerialCamShift::printHistogram(double * histogram, int length)
+void SerialCamShift::printHistogram(float * histogram, int length)
 {
     printf("********** PRINTING HISTOGRAM **********\n");
     int i = 0;
@@ -55,54 +36,52 @@ void SerialCamShift::printHistogram(double * histogram, int length)
      printf("\n********** FINISHED PRINTING HISTOGRAM **********\n");
 }
 
-
-void SerialCamShift::createHistogram(uchar * hsv, int step, RegionOfInterest * roi,  Mat * frame, double ** histogram)
+void SerialCamShift::createHistogram(uchar * hsv, int step, RegionOfInterest * roi,  Mat * frame, float ** histogram)
 {
     
     Point topLeft = (*roi).getTopLeft();
     Point bottomRight = (*roi).getBottomRight();
     int hue = 0;
     
-    double total_pixels = (double) (*roi).getTotalPixels();
+    ofstream fout;
+    fout.open ("hist.txt");
+
+
+   float total_pixels = (float) (*roi).getTotalPixels();
     
-    for(int row = topLeft.y; row < bottomRight.y; row++)
+    
+    for(int col = 0; col < (*roi)._width; col ++)
     {
-        for(int col = topLeft.x; col < bottomRight.x; col ++)
+        for(int row = 0; row < (*roi)._height; row++)
         {
             hue = hsv[ step * row + col ];
-          //  cout << "UCHAR: " << hue << endl;
-        
             (*histogram)[hue / BUCKET_WIDTH] ++;
-            
-            (*frame).at<Vec3b>( row, col )[0]  = (int) 0;
-            (*frame).at<Vec3b>( row, col )[1] = (int) 0;
-            (*frame).at<Vec3b>( row, col )[2] = (int) 0;
         }
         
     }
+
+ 
     
     for(int i =0; i < BUCKETS; i++)//convert to probability
     {
         
         (*histogram)[i] /= total_pixels;
-        //(*histogram)[i] *= 100;
         
-        cout << "histogram[" << i << "] has " << (*histogram)[i] << endl;
+        fout << (*histogram)[i] << endl;
     }
-    
+    fout.close();
 }
 
-
-void SerialCamShift::meanshift(uchar * hueArray, int step, RegionOfInterest * roi, double * histogram)
+void SerialCamShift::meanshift(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram)
 {
 
     Point topLeft = (*roi).getTopLeft();
     Point bottomRight = (*roi).getBottomRight();
-    double M00 = 0.0, M1x = 0.0, M1y = 0.0;
+    float M00 = 0.0, M1x = 0.0, M1y = 0.0;
     unsigned long xc = 0;
     unsigned long yc = 0;
     int hue = 0;
-    double probability = 0.0;
+    float probability = 0.0;
     bool converging = true;
     
     unsigned long prevX = xc;
@@ -134,17 +113,17 @@ void SerialCamShift::meanshift(uchar * hueArray, int step, RegionOfInterest * ro
                 hue = hueArray[ step * row + col ];
                 total += hue;
                 
-              //  myfile << hue << "\n";
+               myfile << hue << "\n";
                 probability =  histogram[hue / BUCKET_WIDTH];
                 M00 += probability;
-                M1x += ((double)col) * probability;
-                M1y += ((double)row) * probability;
+                M1x += ((float)col) * probability;
+                M1y += ((float)row) * probability;
             }
             
         }
        // cout << "MEANSHIFT hue total: " << total<< endl;
         
-       // myfile.close();
+      myfile.close();
         
         
     printf("OLD--> %lf %lf %lf\n",M00, M1x,M1y);

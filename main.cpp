@@ -22,18 +22,15 @@
 
 #include <chrono>
 
-
-
 using namespace cv;
 using namespace std;
 using namespace std::chrono;
-
-Point topLeft, bottomRight;
 
 VideoWriter _outputVideo;
 
 #define OUTPUTFILENAME "out.mov"
 #define MAXTHREADS 3
+
 void parameterCheck(int argCount)
 {
     if(argCount != 3)
@@ -78,46 +75,28 @@ void writeFrame(Mat frame)
     _outputVideo.write(frame);
 }
 
+uchar * parseHueData(Mat hsv, RegionOfInterest roi, int * step)
+{
+
+    std::vector<cv::Mat> hsv_channels;
+    split(hsv, hsv_channels);
+    Mat hueMatrix = hsv_channels[0];
+    Mat subframe = hueMatrix(Rect(roi.getTopLeftX(), roi.getTopLeftY(), roi._width, roi._height));
+  //  cout << subframe.total() << " <----  Smaller T O T A L \n";
+    *step = subframe.step;
+    return subframe.data;
+}
+
+
+
 int main(int argc, const char * argv[])
 {
+    bool shouldCPU = true;
+
     high_resolution_clock::time_point t1;
     high_resolution_clock::time_point t2;
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
    // gpuMain(argc, argv);
     
     parameterCheck(argc);
@@ -142,41 +121,46 @@ int main(int argc, const char * argv[])
     
     SerialCamShift camShift;
     
-    
-    topLeft = Point(x,y);
-    bottomRight = Point(x2,y2);
-    
-    
     Mat frame, hsv;
     
-    double * histogram = (double * ) calloc(sizeof(double), BUCKETS);
-    
+    float * histogram = (float * ) calloc(sizeof(float), BUCKETS);
+
     cap.read(frame);
     
     
-    RegionOfInterest roi(topLeft, bottomRight, cap.get(CV_CAP_PROP_FRAME_WIDTH), cap.get(CV_CAP_PROP_FRAME_HEIGHT));
+    RegionOfInterest roi(Point(x,y), Point(x2,y2), cap.get(CV_CAP_PROP_FRAME_WIDTH), cap.get(CV_CAP_PROP_FRAME_HEIGHT));
  
     
     cvtColor(frame, hsv, CV_RGB2HSV);
+
+    int step = 0;
     
-    //This section for 1-D uchar
-    std::vector<cv::Mat> hsv_channels;
-    cv::split(hsv, hsv_channels);
-    cv::Mat h_image = hsv_channels[0];
-    int size = h_image.rows * h_image.cols;
-    uchar * hueArray = h_image.data;
-    int step = h_image.step;
+
+t1 = high_resolution_clock::now();
+
+     uchar * hueArray = parseHueData(hsv, roi, &step);
+
+     cout << "STEP : " << step << endl;
+     camShift.createHistogram(hueArray, step, &roi, &frame, &histogram);
     
+t2 = high_resolution_clock::now();
+auto dur2 = duration_cast<microseconds>( t2 - t1 ).count();
+cout << "hist2: " << dur2 / 1000.0 << endl;
     
-    camShift.createHistogram(hueArray, step, &roi, &frame, &histogram);
+
+  //camShift.printHistogram(histogram, BUCKETS);
     
-    //camShift.printHistogram(histogram, BUCKETS);
-    
-   camShift.backProjectHistogram(hsv, &frame, roi, histogram);
+   camShift.backProjectHistogram(hueArray, step, &frame, roi, histogram);
     
     roi.drawROI(&frame);
   //  roi.printROI();
     writeFrame(frame);
+
+if(shouldCPU)
+{
+
+
+  
     
  while(cap.read(frame))
  {
@@ -255,9 +239,10 @@ int main(int argc, const char * argv[])
         
         cvtColor(frame, hsv, CV_RGB2HSV);
     
+    std::vector<cv::Mat> hsv_channels;
     
         split(hsv, hsv_channels);
-        h_image = hsv_channels[0];
+      Mat h_image = hsv_channels[0];
         hueArray = h_image.data;
     
     
@@ -280,7 +265,20 @@ int main(int argc, const char * argv[])
        // printf("%d vs %d \n", hueArray[col], hsv.at<Vec3b>(0,col)[0]);
     
         camShift.meanshift(hueArray, step, &roi, histogram);
-     camShift.backProjectHistogram(hsv, &frame, roi, histogram);
+
+
+
+
+    hueArray = parseHueData(hsv, roi, &step);
+     camShift.backProjectHistogram(hueArray, step, &frame, roi, histogram);
+
+
+
+
+
+
+
+
 
       
         roi.drawROI(&frame);
@@ -295,8 +293,12 @@ int main(int argc, const char * argv[])
 	cout << endl << "****END OF CPU Serial MeanShift****" << endl;
 
 
-    
+    }//end shouldCPU
+
     _outputVideo.release();
+
+
+
     free(histogram);
     
    return 0;
