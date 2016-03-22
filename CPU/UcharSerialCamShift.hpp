@@ -24,6 +24,8 @@ public:
     void createHistogram(uchar * hsv, int step, RegionOfInterest * roi,  Mat * frame, float ** histogram);
 
     void meanshift(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram);
+    bool test(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram);
+    bool subMeanShiftTest(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram, int * prevX, int * prevY);
     void printHistogram(float * histogram, int length);
     void backProjectHistogram(uchar * hsv, int step, Mat * frame, RegionOfInterest roi, float * histogram);
 };

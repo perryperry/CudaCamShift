@@ -70,6 +70,15 @@ Point RegionOfInterest::calcBottomRight(Point centroid, int ww, int wh)
     return Point(bottomRight_x, bottomRight_y);
 }
 
+
+int RegionOfInterest::getCenterX(){
+    return  _centroid.x;
+}
+
+int RegionOfInterest::getCenterY(){
+    return  _centroid.y;
+}
+
 int RegionOfInterest::getFrameHeight(){
     return _frameHeight;
 }

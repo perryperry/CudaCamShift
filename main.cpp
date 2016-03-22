@@ -75,11 +75,10 @@ void writeFrame(Mat frame)
     _outputVideo.write(frame);
 }
 
-uchar * parseHueData(Mat hsv, RegionOfInterest roi, int * step)
+uchar * parseSubHueData(Mat hsvMat, RegionOfInterest roi, int * step)
 {
-
     std::vector<cv::Mat> hsv_channels;
-    split(hsv, hsv_channels);
+    split(hsvMat, hsv_channels);
     Mat hueMatrix = hsv_channels[0];
     Mat subframe = hueMatrix(Rect(roi.getTopLeftX(), roi.getTopLeftY(), roi._width, roi._height));
   //  cout << subframe.total() << " <----  Smaller T O T A L \n";
@@ -87,6 +86,14 @@ uchar * parseHueData(Mat hsv, RegionOfInterest roi, int * step)
     return subframe.data;
 }
 
+uchar * parseHueData(Mat hsvMat, int * step)
+{
+    std::vector<cv::Mat> hsv_channels;
+    split(hsvMat, hsv_channels);
+    Mat h_image = hsv_channels[0];
+    *step = h_image.step;
+    return h_image.data;
+}
 
 
 int main(int argc, const char * argv[])
@@ -100,8 +107,6 @@ int main(int argc, const char * argv[])
    // gpuMain(argc, argv);
     
     parameterCheck(argc);
-    
-	//cpuMain(argc, argv);
  
     VideoCapture cap(argv[1]);
     openOutputVideo(cap);
@@ -127,28 +132,71 @@ int main(int argc, const char * argv[])
 
     cap.read(frame);
     
-    
     RegionOfInterest roi(Point(x,y), Point(x2,y2), cap.get(CV_CAP_PROP_FRAME_WIDTH), cap.get(CV_CAP_PROP_FRAME_HEIGHT));
  
-    
     cvtColor(frame, hsv, CV_RGB2HSV);
 
     int step = 0;
     
+    t1 = high_resolution_clock::now();
 
-t1 = high_resolution_clock::now();
+     uchar * hueArray = parseSubHueData(hsv, roi, &step);
+    
+    uchar * hueArrayTest = parseHueData(hsv, &step);
 
-     uchar * hueArray = parseHueData(hsv, roi, &step);
-
+    
      cout << "STEP : " << step << endl;
      camShift.createHistogram(hueArray, step, &roi, &frame, &histogram);
     
-t2 = high_resolution_clock::now();
-auto dur2 = duration_cast<microseconds>( t2 - t1 ).count();
-cout << "hist2: " << dur2 / 1000.0 << endl;
+    t2 = high_resolution_clock::now();
+    auto dur2 = duration_cast<microseconds>( t2 - t1 ).count();
+    cout << "hist2: " << dur2 / 1000.0 << endl;
     
 
   //camShift.printHistogram(histogram, BUCKETS);
+    
+    bool go = true;
+    
+    
+    int prevX = 0;
+    int prevY = 0;
+    
+ /*  do{
+         prevX = roi.getCenterX();
+        prevY = roi.getCenterY();
+        hueArray = parseSubHueData(hsv, roi, &step);
+        
+           go = camShift.subMeanShiftTest(hueArray, step, &roi, histogram, &prevX, &prevY);
+        
+    }while(go);
+    
+   */
+    
+    
+    
+ //camShift.meanshift(hueArrayTest, step, &roi, histogram);
+    
+    
+    
+  //  camShift.test(hueArrayTest, step, &roi, histogram);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
    camShift.backProjectHistogram(hueArray, step, &frame, roi, histogram);
     
@@ -158,147 +206,56 @@ cout << "hist2: " << dur2 / 1000.0 << endl;
 
 if(shouldCPU)
 {
+     while(cap.read(frame))
+     {
+     
+         cvtColor(frame, hsv, CV_RGB2HSV);
 
-
-  
-    
- while(cap.read(frame))
- {
-        //This is to test instead of using the loop
-   //     cap.read(frame);
-    
-    /* Testing a sub matrix approach */
-    
-    
-    
-  //  cout << subframe.total() <<  " <---- TOTAL!!!!" << endl;
- /*   Mat subhsv;
-    
-    
- 
-    
-   
-    cvtColor(frame, subhsv, CV_RGB2HSV);
-    
-      t1 = high_resolution_clock::now();
- Mat subframe = subhsv(Rect(roi.getTopLeftX(),roi.getTopLeftY(),roi._width,roi._height));
-
-
-    std::vector<cv::Mat> subhsv_channels;
-    split(subframe, subhsv_channels);
-    Mat subh_image = subhsv_channels[0];
-    uchar *  subhueArray = subh_image.data;
-
-
-    t2 = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>( t2 - t1 ).count();
-    cout << "Duration of preparing submatrix: " << duration / 1000.0 << endl;
-
-
-    
-    step = subh_image.step;
-
-    ofstream fout;
-    fout.open ("submatrix.txt");
-    int t = 0;
-    
-   // for(int b = 0; b < subframe.total(); b ++){
-    
-    
-
-    
-    for(int col = 0; col < roi._width; col ++)
-    {
-        for(int row = 0; row < roi._height; row++)
-        {
-            int conversion = (int) subhueArray[step * row + col];
-            t+= conversion;
-           // fout << conversion << "\n";
-        }
-    }
-    
-    cout << "SUBMAT Hue Total: " << t << endl;
-    cout << "SUBMAT TOTAL " << subframe.total() << endl;
-    fout.close();
-    */
-  
-    /* End of Sub-Matrix Testing */
-    
-    
-    
-    
-    
-    
-    
-    
-    
-   // Point lastPoint = Point(roi._centroid.x, roi._centroid.y);
-    
-
-     t1 = high_resolution_clock::now();
+         
+         t1 = high_resolution_clock::now();
+         
+         hueArray = parseHueData(hsv, &step);
+         
+         t2 = high_resolution_clock::now();
+         auto duration2 = duration_cast<microseconds>( t2 - t1 ).count();
         
-        cvtColor(frame, hsv, CV_RGB2HSV);
+         
+       // cout << "Duration of preparing using entire frame: " << duration2 / 1000.0 << endl;
     
-    std::vector<cv::Mat> hsv_channels;
+         /* Remember to change below back */
+         
+         
+     // camShift.meanshift(hueArray, step, &roi, histogram);
+       // camShift.test(hueArray, step, &roi, histogram);
+
+        go = true;
+         
+       
+         
+         while(go){
+             prevX = roi.getCenterX();
+             prevY = roi.getCenterY();
+           hueArray = parseSubHueData(hsv, roi, &step);
+           go = camShift.subMeanShiftTest(hueArray, step, &roi, histogram, &prevX, &prevY);
+       }
     
-        split(hsv, hsv_channels);
-      Mat h_image = hsv_channels[0];
-        hueArray = h_image.data;
-    
-    
-    
-    
-    
-    t2 = high_resolution_clock::now();
-    auto duration2 = duration_cast<microseconds>( t2 - t1 ).count();
-   // cout << "Duration of preparing using entire frame: " << duration2 / 1000.0 << endl;
-    
-    
-    
-    
-    
-    
-        step = h_image.step;
-    
-    //for(int col = 0; col < cap.get(CV_CAP_PROP_FRAME_WIDTH); col ++)
-        
-       // printf("%d vs %d \n", hueArray[col], hsv.at<Vec3b>(0,col)[0]);
-    
-        camShift.meanshift(hueArray, step, &roi, histogram);
+       
+         hueArray = parseSubHueData(hsv, roi, &step);
+         camShift.backProjectHistogram(hueArray, step, &frame, roi, histogram);
 
 
-
-
-    hueArray = parseHueData(hsv, roi, &step);
-     camShift.backProjectHistogram(hueArray, step, &frame, roi, histogram);
-
-
-
-
-
-
-
-
-
-      
-        roi.drawROI(&frame);
-      //  roi.printROI();
-        writeFrame(frame);
-        
- }//end while
-    
+            roi.drawROI(&frame);
+          //  roi.printROI();
+            writeFrame(frame);
+            
+     }//end while
   
-
-    
 	cout << endl << "****END OF CPU Serial MeanShift****" << endl;
 
 
     }//end shouldCPU
 
     _outputVideo.release();
-
-
-
     free(histogram);
     
    return 0;

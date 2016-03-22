@@ -57,14 +57,9 @@ void SerialCamShift::createHistogram(uchar * hsv, int step, RegionOfInterest * r
             hue = hsv[ step * row + col ];
             (*histogram)[hue / BUCKET_WIDTH] ++;
         }
-        
     }
-
- 
-    
     for(int i =0; i < BUCKETS; i++)//convert to probability
     {
-        
         (*histogram)[i] /= total_pixels;
         
         fout << (*histogram)[i] << endl;
@@ -72,38 +67,160 @@ void SerialCamShift::createHistogram(uchar * hsv, int step, RegionOfInterest * r
     fout.close();
 }
 
-void SerialCamShift::meanshift(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram)
+bool SerialCamShift::subMeanShiftTest(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram, int * prevX, int * prevY)
 {
-
-    Point topLeft = (*roi).getTopLeft();
-    Point bottomRight = (*roi).getBottomRight();
     float M00 = 0.0, M1x = 0.0, M1y = 0.0;
-    unsigned long xc = 0;
-    unsigned long yc = 0;
+    int xc = 0;
+    int yc = 0;
+    int hue = 0;
+    float probability = 0.0;
+    int rOffset = (*roi).getTopLeftY();
+    int cOffset = (*roi).getTopLeftX();
+    
+    int count = 0;
+    
+    ofstream myfile;
+    myfile.open ("meanshift3.txt", fstream::app);
+ 
+    count ++;
+    int total  = 0;
+    
+    for(int c = 0; c < (*roi)._width; c ++)
+    {
+        for(int r = 0; r < (*roi)._height; r++)
+        {
+            hue = hueArray[ step * r + c ];
+            total += hue;
+            
+            probability = histogram[hue / BUCKET_WIDTH];
+            M00 += probability;
+            M1x += ((float)(c + cOffset)) * probability;
+            M1y += ((float)(r + rOffset)) * probability;
+        }
+        
+    }
+     myfile << M00 << " " << M1x << " " << M1y << "\n";
+    
+    
+    if(M00 > 0){//Can't divide by zero...
+        
+        xc = (int) (M1x / M00);
+        yc = (int) (M1y / M00);
+        (*roi).setCentroid(Point(xc, yc));
+       // myfile << xc << " " << yc << "\n";
+    }
+    
+    
+    
+    
+    if(*prevX - xc < 1 && *prevX - xc > -1  && *prevY - yc < 1 && *prevY - yc > -1)
+    {
+        (*roi).setCentroid(Point(xc, yc));
+        myfile << "****\n";
+        myfile.close();
+        return false;
+    }
+    else
+    {
+        (*roi).setCentroid(Point(xc, yc));
+        *prevX = xc;
+        *prevY = yc;
+        myfile.close();
+        return true;
+    }
+}
+
+
+bool SerialCamShift::test(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram)
+{
+    float M00 = 0.0, M1x = 0.0, M1y = 0.0;
+    int xc = 0;
+    int yc = 0;
     int hue = 0;
     float probability = 0.0;
     bool converging = true;
     
-    unsigned long prevX = xc;
-    unsigned long prevY = yc;
+    int prevX = (*roi).getCenterX();
+    int prevY = (*roi).getCenterY();
+    int count = 0;
+    
+    ofstream myfile2;
+    myfile2.open ("meanshift2.txt", fstream::app);
+    
+    while(converging)
+    {
+        count ++;
+        int total  = 0;
+        M00 = 0.0, M1x = 0.0, M1y = 0.0;
+      
+         for(int col = 0; col < (*roi)._width; col ++)
+         {
+             for(int row = 0; row < (*roi)._height; row++)
+             {
+                 int  r = row + (*roi).getTopLeftY();
+                 int c = col + (*roi).getTopLeftX();
+                 
+                 hue = hueArray[ step * r + c ];
+                 total += hue;
+                 
+                 probability = histogram[hue / BUCKET_WIDTH];
+                 M00 += probability;
+                 M1x += ((float)c) * probability;
+                 M1y += ((float)r) * probability;
+                 
+             }
+         
+         }
+        myfile2 << M00 << " " << M1x << " " << M1y << "\n";
+        if(M00 > 0){//Can't divide by zero...
+         
+            xc = (int) (M1x / M00);
+            yc = (int) (M1y / M00);
+            (*roi).setCentroid(Point(xc, yc));
+            // myfile2 << xc << " " << yc << "\n";
+         }
+        
+        if(prevX - xc < 1 && prevX - xc > -1  && prevY - yc < 1 && prevY - yc > -1){
+            myfile2 << "****\n";
+            converging = false;
+        }
+        else
+        {
+            prevX = xc;
+            prevY = yc;
+            (*roi).setCentroid(Point(xc, yc));
+        }
+        
+    }//end of converging
+
+    myfile2.close();
+    (*roi).setCentroid(Point(xc, yc));
+    
+    return true;
+}
+
+
+void SerialCamShift::meanshift(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram)
+{
+    float M00 = 0.0, M1x = 0.0, M1y = 0.0;
+    int xc = (*roi).getCenterX();
+    int yc = (*roi).getCenterY();
+    int hue = 0;
+    float probability = 0.0;
+    bool converging = true;
+    
+    int prevX = xc;
+    int prevY = yc;
     int count = 0;
     
     ofstream myfile;
-    myfile.open ("meanshift.txt");
-    
-   // ofstream myfile2;
-    //myfile2.open ("meanshift2.txt");
-    
-    // printf("HI: %d %d\n", topLeft.x, topLeft.y);
-    
+    myfile.open ("meanshift.txt", fstream::app);
    
     while(converging)
     {
         count ++;
         int total  = 0;
-        
-      cout << "Let's have a look... " << (*roi).getTopLeftX() << " and " << (*roi).getBottomRightX()  << " and "<< (*roi).getTopLeftY()<< " and " << (*roi).getBottomRightY() <<endl;
-        
+         M00 = 0.0, M1x = 0.0, M1y = 0.0;
         
         for(int col = (*roi).getTopLeftX(); col < (*roi).getBottomRightX(); col ++)
        {
@@ -112,83 +229,40 @@ void SerialCamShift::meanshift(uchar * hueArray, int step, RegionOfInterest * ro
       
                 hue = hueArray[ step * row + col ];
                 total += hue;
-                
-               myfile << hue << "\n";
+               
                 probability =  histogram[hue / BUCKET_WIDTH];
                 M00 += probability;
                 M1x += ((float)col) * probability;
                 M1y += ((float)row) * probability;
+        
             }
             
         }
-       // cout << "MEANSHIFT hue total: " << total<< endl;
-        
-      myfile.close();
-        
-        
-    printf("OLD--> %lf %lf %lf\n",M00, M1x,M1y);
-        
+           myfile << M00 << " " << M1x << " " << M1y << "\n";
         if(M00 > 0){//Can't divide by zero...
             
-            xc = (unsigned long) (M1x / M00);
-            yc = (unsigned long) (M1y / M00);
-            (*roi).setCentroid(Point((int)xc, (int)yc));
+            xc = (int) (M1x / M00);
+            yc = (int) (M1y / M00);
+            (*roi).setCentroid(Point(xc, yc));
             
+          //  myfile << xc << " " << yc << "\n";
         }
-      //  printf("OLD --> %lu %lu\n", xc, yc);
-   /*     M00 = 0;
-        M1x = 0;
-        M1y = 0;
-        total = 0;
         
-        
-        
-        for(int col = 0; col < (*roi)._width; col ++)
-        {
-            for(int row = 0; row < (*roi)._height; row++)
-            {
-                
-                int  r = row + topLeft.y;
-                int c = col + topLeft.x;
-                
-                hue = hueArray[ step * r + c];
-                total += hue;
-    
-                myfile2 << hue << "\n";
-                
-                probability = (unsigned long) histogram[hue / BUCKET_WIDTH];
-                M00 += probability;
-                M1x += c * probability;
-                M1y += r * probability;
-            }
-            
-        }
-         // printf("NEW--> %lu %lu %lu\n",M00,M1x, M1y);
-cout << "MEANSHIFT hue total: " << total<< endl;
-        
-        myfile2.close();*/
-        
-    /*    if(M00 > 0){//Can't divide by zero...
-            
-            xc = (unsigned long) (M1x / M00);
-            yc = (unsigned long) (M1y / M00);
-        }*/
-        
-       printf("xc vs prevX: %lu %lu, yc vs prevY: %lu %lu\n", xc, prevX, yc, prevY);
-        
-        
-        if(xc - prevX < 1 && yc - prevY < 1)
+        if(prevX - xc < 1 && prevX - xc > -1  && prevY - yc < 1 && prevY - yc > -1){
+            myfile << "****\n";
             converging = false;
+        }
         else
         {
             prevX = xc;
             prevY = yc;
+            (*roi).setCentroid(Point(xc, yc));
         }
-        
-     //   printf("#%d M00--> %lu M1x--> %lu M1y --> %lu XC --> %lu YC ---> %lu\n",count, M00, M1x, M1y, xc, yc);
+    
     }//end of converging
-  
-  printf("************ CONVERGED: %lu, %lu\n", xc, yc);
-    (*roi).setCentroid(Point((int)xc, (int)yc));
+    
+    myfile.close();
+    
+    (*roi).setCentroid(Point(xc, yc));
 
 }

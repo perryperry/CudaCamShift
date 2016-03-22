@@ -38,6 +38,8 @@ public:
     int getFrameHeight();
     void printROI();
     Point _centroid;
+    int getCenterX();
+    int getCenterY();
     int getBottomRightX();
     int getBottomRightY();
     int getTopLeftX();
