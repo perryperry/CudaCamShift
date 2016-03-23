@@ -8,7 +8,7 @@
 #include <math.h>
 
 
-int gpuMain(int argc, const char ** argv);
+int  gpuMain(int blockWidth, int numElementsInput, char p);
 
 float * fillArray(int n, int upbound);
 

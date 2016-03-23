@@ -55,34 +55,21 @@ void usage()
 }
 
 
-int gpuMain(int argc, const char **argv)
+int gpuMain(int blockWidth, int numElementsInput, char p)
 {
-   // create a large workload so we can easily measure the
-   // performance difference on CPU and GPU
+  int shouldPrint = 0;
 
-   // to run this program: ./a.out blockWidth numElements p
-   int shouldPrint = 0;
-   if(argc < 3 || argc > 4) {
-      usage();
-      return 1;
-   } else  if(argc == 3){
-         shouldPrint = 0;
-   } else if(argv[3][0]=='p'){
-         shouldPrint=1;
-   } else {
-         usage();
-         return 1;
-   }
+  if(p == 'p')
+    shouldPrint = 1;
 
-   //
-   float tile_width = atoi(argv[1]);
+   float tile_width = (float) blockWidth;
 
    if ( ! tile_width )
    {
        printf("Wrong argument passed in for blockWidth!\n");
        exit(-1);
    }
-   int n = atoi(argv[2]); //size of 1D input array
+   int n = numElementsInput; //size of 1D input array
 
    if ( ! n )
    {
@@ -125,11 +112,14 @@ int gpuMain(int argc, const char **argv)
    cudaEventCreate(&launch_begin);
    cudaEventCreate(&launch_end);
 
-   printf("The input array is:\n");
-   //print out original array
-   if(shouldPrint)
-       printArray(h_in, n);
 
+   //print out original array
+    if(shouldPrint)
+    {
+        printf("The input array is:\n");
+        printArray(h_in, n);
+
+    }
 
    //----------------------time many kernel launches and take the average time--------------------
    
@@ -142,9 +132,6 @@ int gpuMain(int argc, const char **argv)
        // record a CUDA event immediately before and after the kernel launch
        cudaEventRecord(launch_begin,0);
     
-
-
-
        while( 1 )
        {
            if(launch % 2 == 1) // odd launch
@@ -157,6 +144,7 @@ int gpuMain(int argc, const char **argv)
            // if the number of local max returned by kernel is greater than the threshold,
            // we do reduction on GPU for these returned local maxes for another pass,
            // until, num_out < threshold
+
            if(num_out >= THRESH)
            {
                num_in = num_out;
@@ -177,10 +165,6 @@ int gpuMain(int argc, const char **argv)
            launch ++;
        }//end of while
 
-
-
-
-
        cudaEventRecord(launch_end,0);
        cudaEventSynchronize(launch_end);
 
@@ -194,8 +178,7 @@ int gpuMain(int argc, const char **argv)
   printf(" done! GPU time cost in second: %f\n", average_simple_time / 1000);
   printf(" done! GPU time cost in second: %f\n", time / 1000);
 
-  printf("The output array from device is:\n");
-  //if(shouldPrint)
+      printf("The output array from device is:\n");
       printArray(h_out, num_out);
 
 

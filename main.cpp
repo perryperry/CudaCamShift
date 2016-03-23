@@ -98,13 +98,22 @@ uchar * parseHueData(Mat hsvMat, int * step)
 
 int main(int argc, const char * argv[])
 {
-    bool shouldCPU = true;
+    bool shouldCPU = false;
 
     high_resolution_clock::time_point t1;
     high_resolution_clock::time_point t2;
     
 
    // gpuMain(argc, argv);
+    
+    int blockWidth = 16;
+    int numElementsInput = 1000000;
+    char p = 'n';
+    
+    gpuMain(blockWidth, numElementsInput, p);
+    
+    if(shouldCPU)
+    {
     
     parameterCheck(argc);
  
@@ -204,8 +213,7 @@ int main(int argc, const char * argv[])
   //  roi.printROI();
     writeFrame(frame);
 
-if(shouldCPU)
-{
+
      while(cap.read(frame))
      {
      
@@ -251,12 +259,12 @@ if(shouldCPU)
      }//end while
   
 	cout << endl << "****END OF CPU Serial MeanShift****" << endl;
-
+ free(histogram);
 
     }//end shouldCPU
 
     _outputVideo.release();
-    free(histogram);
+   
     
    return 0;
 }
