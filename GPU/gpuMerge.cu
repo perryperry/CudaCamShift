@@ -1,8 +1,8 @@
 
 
-__global__ void gpuSummationReduce(int *in, int *out, int n)
+__global__ void gpuSummationReduce(float *in, float *out, int n)
 {
-    extern __shared__ int sdata[];
+    extern __shared__ float sdata[];
 
     // load shared mem
     unsigned int tid = threadIdx.x;
@@ -18,8 +18,8 @@ __global__ void gpuSummationReduce(int *in, int *out, int n)
         // modulo arithmetic is slow!
         if ((tid % (2*s)) == 0)
         {
-
-            sdata[tid] += sdata[tid + s]; //bigger number stored in low index
+             //bigger number stored in low index
+            sdata[tid] += sdata[tid + s];
         }
 
         __syncthreads();

@@ -3,49 +3,43 @@
 #include "timing.c"
 #include "gpuMerge.h"
 
-#define UPB 100
 #define LEVELS 5
 #define MAXDRET 102400
 #define THRESH 2
 
-int * fillArray(int n, int upbound)
+float * fillArray(int n)
 {
    int i;
 
-   int *ret = (int *)malloc(sizeof(int) * n );
+   float *ret = (float *) malloc(sizeof(float) * n );
 
-   /* Intializes random number generator */
-   //seeds the random number generator used by the function rand.
-    srand(1);//time(NULL));
-
-   /* generate n random numbers from 0 to unbound - 1 */
-   for( i = 0 ; i < n ; i++ ) {
-      ret[i] = i;//rand() % upbound * 1.0f;
+    for( i = 0; i < n ; i++ ) {
+      ret[i] = (float) 3.3;
    }
 
    return ret;
 }
 
-void printArray(int *arr, int n){
+void printArray(float *arr, int n){
 
    int i;
 
    for(i = 0; i < n; i ++)
-      printf("%d ", arr[i]);
+      printf("%f ", arr[i]);
 
    printf("\n");
 }
 
-int cpuReduce(int *h_in, int n)
+float cpuReduce(float * h_in, int n)
 {
-    int total = 0;
+   double total = 0.0;
 
-	int i;
+	 int i;
+
     for(i = 0; i < n; i ++)
-        total += h_in[i];
+        total += (double) h_in[i];
 
-	//printf("Total found by  cpu == %d\n", total);
-
+    printf("CPU---> %lfn", total);
     return total;
 }
 
@@ -62,7 +56,7 @@ int gpuMain(int blockWidth, int numElementsInput, char p)
   if(p == 'p')
     shouldPrint = 1;
 
-   float tile_width = (float) blockWidth;
+   int tile_width = blockWidth;
 
    if ( ! tile_width )
    {
@@ -78,16 +72,19 @@ int gpuMain(int blockWidth, int numElementsInput, char p)
    }
 
    // set up host memory
-   int *h_in, *h_out, *d_in, *d_out;
+   float *h_in, *h_out, *d_in, *d_out;
 
    //int sizeDout[LEVELS]; //we can have at most 5 levels of kernel launch
 
-   h_out = (int *)malloc(MAXDRET * sizeof(int));
+   h_out = (float *)malloc(MAXDRET * sizeof(float));
 
-   memset(h_out, 0, MAXDRET * sizeof(int));
+   memset(h_out, 0, MAXDRET * sizeof(float));
 
    //generate input data from random generator
-   h_in = fillArray(n, UPB);
+   h_in = fillArray(n);
+
+
+   cpuReduce(h_in, n);
 
    if( ! h_in || ! h_out )
    {
@@ -95,17 +92,17 @@ int gpuMain(int blockWidth, int numElementsInput, char p)
        exit(-1);
    }
 
-   float num_block = ceil(n / (float)tile_width);
+   int num_block = ceil(n / (float)tile_width);
    dim3 block(tile_width, 1, 1);
    dim3 grid(num_block, 1, 1);
 
    // allocate storage for the device
-   cudaMalloc((void**)&d_in, sizeof(int) * n);
-   cudaMalloc((void**)&d_out, sizeof(int) * MAXDRET);
-   cudaMemset(d_out, 0, sizeof(int) * MAXDRET);
+   cudaMalloc((void**)&d_in, sizeof(float) * n);
+   cudaMalloc((void**)&d_out, sizeof(float) * MAXDRET);
+   cudaMemset(d_out, 0, sizeof(float) * MAXDRET);
 
    // copy input to the device
-   cudaMemcpy(d_in, h_in, sizeof(int) * n, cudaMemcpyHostToDevice);
+   cudaMemcpy(d_in, h_in, sizeof(float) * n, cudaMemcpyHostToDevice);
 
    // time the kernel launches using CUDA events
    cudaEvent_t launch_begin, launch_end;
@@ -156,12 +153,15 @@ int gpuMain(int blockWidth, int numElementsInput, char p)
            {
                //copy the ouput of last lauch back to host,
                if(launch % 2 == 1)
-                  cudaMemcpy(h_out, d_out, sizeof(int) * num_out, cudaMemcpyDeviceToHost);
+                  cudaMemcpy(h_out, d_out, sizeof(float) * num_out, cudaMemcpyDeviceToHost);
                else
-                  cudaMemcpy(h_out, d_in, sizeof(int) * num_out, cudaMemcpyDeviceToHost);
+                  cudaMemcpy(h_out, d_in, sizeof(float) * num_out, cudaMemcpyDeviceToHost);
 
                break;
            }
+
+
+
            launch ++;
        }//end of while
 
@@ -188,15 +188,24 @@ int gpuMain(int blockWidth, int numElementsInput, char p)
   float average_cpu_time = 0;
   clock_t now, then;
 
-  long cpuTotal = 0;
+  float cpuTotal = 0;
 
   printf("Timing CPU implementation…\n");
 
  
+
+
+
+
     // timing on CPU
     then = clock();
     cpuTotal = cpuReduce(h_in, n);
     now = clock();
+
+
+
+
+
 
     // measure the time spent on CPU
    time = 0;
@@ -209,7 +218,7 @@ int gpuMain(int blockWidth, int numElementsInput, char p)
   printf(" done. CPU time cost in second: %f\n", time);
 
   //if (shouldPrint)
-      printf("CPU finding total is %ld\n", cpuTotal);
+      printf("CPU finding total is %.1f\n", cpuTotal);
 
   //--------------------------------clean up-----------------------------------------------------
   cudaEventDestroy(launch_begin);

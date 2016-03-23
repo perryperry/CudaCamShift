@@ -8,7 +8,7 @@
 
 #include "UcharSerialCamShift.hpp"
 
-void SerialCamShift::backProjectHistogram(uchar * hsv, int step, Mat * frame, RegionOfInterest roi, float * histogram)
+void SerialCamShift::backProjectHistogram(unsigned char * hsv, int step, Mat * frame, RegionOfInterest roi, float * histogram)
 {
     int hue = 0, count = 0;
     for(int col = 0; col < roi._width; col ++)
@@ -36,7 +36,7 @@ void SerialCamShift::printHistogram(float * histogram, int length)
      printf("\n********** FINISHED PRINTING HISTOGRAM **********\n");
 }
 
-void SerialCamShift::createHistogram(uchar * hsv, int step, RegionOfInterest * roi,  Mat * frame, float ** histogram)
+void SerialCamShift::createHistogram(unsigned char * hsv, int step, RegionOfInterest * roi,  Mat * frame, float ** histogram)
 {
     
     Point topLeft = (*roi).getTopLeft();
@@ -44,7 +44,7 @@ void SerialCamShift::createHistogram(uchar * hsv, int step, RegionOfInterest * r
     int hue = 0;
     
     ofstream fout;
-    fout.open ("hist.txt");
+    fout.open ("hist2.txt");
 
 
    float total_pixels = (float) (*roi).getTotalPixels();
@@ -67,7 +67,7 @@ void SerialCamShift::createHistogram(uchar * hsv, int step, RegionOfInterest * r
     fout.close();
 }
 
-bool SerialCamShift::subMeanShiftTest(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram, int * prevX, int * prevY)
+bool SerialCamShift::subMeanShiftTest(unsigned char * hueArray, int step, RegionOfInterest * roi, float * histogram, int * prevX, int * prevY)
 {
     float M00 = 0.0, M1x = 0.0, M1y = 0.0;
     int xc = 0;
@@ -131,7 +131,7 @@ bool SerialCamShift::subMeanShiftTest(uchar * hueArray, int step, RegionOfIntere
 }
 
 
-bool SerialCamShift::test(uchar * hueArray, int step, RegionOfInterest * roi, float * histogram)
+bool SerialCamShift::test(unsigned char * hueArray, int step, RegionOfInterest * roi, float * histogram)
 {
     float M00 = 0.0, M1x = 0.0, M1y = 0.0;
     int xc = 0;

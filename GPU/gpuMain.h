@@ -8,13 +8,13 @@
 #include <math.h>
 
 
-int  gpuMain(int blockWidth, int numElementsInput, char p);
+int gpuMain(int blockWidth, int numElementsInput, char p);
 
-float * fillArray(int n, int upbound);
+float * fillArray(int n);
 
-void printArray(int *arr, int n);
+void printArray(float *arr, int n);
 
-long cpuReduce(int *h_in, int n);
+float cpuReduce(float * h_in, int n);
 
 void usage();
 

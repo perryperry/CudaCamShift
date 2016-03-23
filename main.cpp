@@ -75,7 +75,7 @@ void writeFrame(Mat frame)
     _outputVideo.write(frame);
 }
 
-uchar * parseSubHueData(Mat hsvMat, RegionOfInterest roi, int * step)
+unsigned char * parseSubHueData(Mat hsvMat, RegionOfInterest roi, int * step)
 {
     std::vector<cv::Mat> hsv_channels;
     split(hsvMat, hsv_channels);
@@ -83,16 +83,16 @@ uchar * parseSubHueData(Mat hsvMat, RegionOfInterest roi, int * step)
     Mat subframe = hueMatrix(Rect(roi.getTopLeftX(), roi.getTopLeftY(), roi._width, roi._height));
   //  cout << subframe.total() << " <----  Smaller T O T A L \n";
     *step = subframe.step;
-    return subframe.data;
+    return (unsigned char *) subframe.data;
 }
 
-uchar * parseHueData(Mat hsvMat, int * step)
+unsigned char * parseHueData(Mat hsvMat, int * step)
 {
     std::vector<cv::Mat> hsv_channels;
     split(hsvMat, hsv_channels);
     Mat h_image = hsv_channels[0];
     *step = h_image.step;
-    return h_image.data;
+    return (unsigned char *) h_image.data;
 }
 
 
@@ -103,17 +103,13 @@ int main(int argc, const char * argv[])
     high_resolution_clock::time_point t1;
     high_resolution_clock::time_point t2;
     
-
-   // gpuMain(argc, argv);
-    
-    int blockWidth = 16;
-    int numElementsInput = 1000000;
+    int blockWidth = 64;
+    int numElementsInput = 555555;
     char p = 'n';
     
-    gpuMain(blockWidth, numElementsInput, p);
+   // gpuMain(blockWidth, numElementsInput, p);
     
-    if(shouldCPU)
-    {
+   
     
     parameterCheck(argc);
  
@@ -137,7 +133,7 @@ int main(int argc, const char * argv[])
     
     Mat frame, hsv;
     
-    float * histogram = (float * ) calloc(sizeof(float), BUCKETS);
+    float * histogram = (float *) calloc(sizeof(float), BUCKETS);
 
     cap.read(frame);
     
@@ -149,9 +145,9 @@ int main(int argc, const char * argv[])
     
     t1 = high_resolution_clock::now();
 
-     uchar * hueArray = parseSubHueData(hsv, roi, &step);
+     unsigned char * hueArray = parseSubHueData(hsv, roi, &step);
     
-    uchar * hueArrayTest = parseHueData(hsv, &step);
+    unsigned char * hueArrayTest = parseHueData(hsv, &step);
 
     
      cout << "STEP : " << step << endl;
@@ -162,7 +158,7 @@ int main(int argc, const char * argv[])
     cout << "hist2: " << dur2 / 1000.0 << endl;
     
 
-  //camShift.printHistogram(histogram, BUCKETS);
+  camShift.printHistogram(histogram, BUCKETS);
     
     bool go = true;
     
@@ -181,39 +177,19 @@ int main(int argc, const char * argv[])
     
    */
     
-    
-    
  //camShift.meanshift(hueArrayTest, step, &roi, histogram);
-    
-    
-    
   //  camShift.test(hueArrayTest, step, &roi, histogram);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
    camShift.backProjectHistogram(hueArray, step, &frame, roi, histogram);
     
     roi.drawROI(&frame);
   //  roi.printROI();
     writeFrame(frame);
 
-
+    if(shouldCPU)
+    {
+        
+        
      while(cap.read(frame))
      {
      
